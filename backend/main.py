@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Request
+import os
+
+from fastapi import FastAPI, HTTPException, Request
 from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -11,10 +13,13 @@ app = FastAPI()
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".docx", ".txt"}
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 class ChatRequest(BaseModel):
     prompt: str
@@ -27,13 +32,24 @@ def chat(req: ChatRequest):
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    contents = await file.read()
-    file_path = f"backend/data/docs/{file.filename}"
+    safe_name = os.path.basename(file.filename)
+    ext = os.path.splitext(safe_name)[1].lower()
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type '{ext}' not allowed")
+
+    file_path = f"backend/data/docs/{safe_name}"
+    size = 0
     with open(file_path, "wb") as f:
-        f.write(contents)
+        while chunk := await file.read(1024 * 1024):
+            size += len(chunk)
+            if size > MAX_UPLOAD_BYTES:
+                f.close()
+                os.remove(file_path)
+                raise HTTPException(status_code=413, detail="File exceeds 10 MB limit")
+            f.write(chunk)
 
     n_chunks = process_and_store(file_path)
-    return {"message": f"Stored {n_chunks} chunks from {file.filename}"}
+    return {"message": f"Stored {n_chunks} chunks from {safe_name}"}
 
 
 class UrlRequest(BaseModel):
