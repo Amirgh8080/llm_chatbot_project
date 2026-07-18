@@ -1,17 +1,25 @@
+import logging
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from config import DOCS_PATH, FRONTEND_DIR
 from llm_chat import stream_grounded_answer
-from rag_pipeline import process_and_store, process_url
+from rag_pipeline import process_and_store, process_url, seed_if_empty
 
 app = FastAPI()
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -27,12 +35,26 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 os.makedirs(DOCS_PATH, exist_ok=True)
 
 
+@app.on_event("startup")
+def _seed_on_startup():
+    try:
+        seed_if_empty()
+    except Exception:
+        logging.exception("Sample-document seeding failed; continuing without it")
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 class ChatRequest(BaseModel):
     prompt: str
 
 
 @app.post("/chat")
-def chat(req: ChatRequest):
+@limiter.limit("20/minute")
+def chat(request: Request, req: ChatRequest):
     return StreamingResponse(
         stream_grounded_answer(req.prompt),
         media_type="text/event-stream",
@@ -40,7 +62,8 @@ def chat(req: ChatRequest):
 
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+@limiter.limit("20/minute")
+async def upload_file(request: Request, file: UploadFile = File(...)):
     safe_name = os.path.basename(file.filename)
     ext = os.path.splitext(safe_name)[1].lower()
     if ext not in ALLOWED_UPLOAD_EXTENSIONS:
@@ -70,7 +93,8 @@ class UrlRequest(BaseModel):
 
 
 @app.post("/upload_url")
-def upload_url(req: UrlRequest):
+@limiter.limit("20/minute")
+def upload_url(request: Request, req: UrlRequest):
     try:
         n_chunks = process_url(req.url)
     except Exception as e:

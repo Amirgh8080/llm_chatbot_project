@@ -12,4 +12,5 @@ REPO_ROOT = BACKEND_DIR.parent
 
 CHROMA_PATH = str(BACKEND_DIR / "data" / "db")
 DOCS_PATH = str(BACKEND_DIR / "data" / "docs")
+SAMPLES_PATH = str(BACKEND_DIR / "data" / "samples")
 FRONTEND_DIR = str(REPO_ROOT / "frontend")
