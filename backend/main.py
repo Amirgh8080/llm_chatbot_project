@@ -1,12 +1,15 @@
 import os
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi import UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from llm_chat import generate_response
-from rag_pipeline import process_and_store
-from rag_pipeline import load_url
+
+from config import DOCS_PATH, FRONTEND_DIR
+from llm_chat import stream_grounded_answer
+from rag_pipeline import process_and_store, process_url
 
 app = FastAPI()
 
@@ -21,13 +24,19 @@ app.add_middleware(
 ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".docx", ".txt"}
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
+os.makedirs(DOCS_PATH, exist_ok=True)
+
+
 class ChatRequest(BaseModel):
     prompt: str
 
+
 @app.post("/chat")
 def chat(req: ChatRequest):
-    reply = generate_response(req.prompt)
-    return {"response": reply}
+    return StreamingResponse(
+        stream_grounded_answer(req.prompt),
+        media_type="text/event-stream",
+    )
 
 
 @app.post("/upload")
@@ -37,7 +46,7 @@ async def upload_file(file: UploadFile = File(...)):
     if ext not in ALLOWED_UPLOAD_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type '{ext}' not allowed")
 
-    file_path = f"backend/data/docs/{safe_name}"
+    file_path = os.path.join(DOCS_PATH, safe_name)
     size = 0
     with open(file_path, "wb") as f:
         while chunk := await file.read(1024 * 1024):
@@ -48,21 +57,25 @@ async def upload_file(file: UploadFile = File(...)):
                 raise HTTPException(status_code=413, detail="File exceeds 10 MB limit")
             f.write(chunk)
 
-    n_chunks = process_and_store(file_path)
+    try:
+        n_chunks = process_and_store(file_path)
+    except Exception as e:
+        os.remove(file_path)
+        raise HTTPException(status_code=502, detail=f"Failed to process document: {e}")
     return {"message": f"Stored {n_chunks} chunks from {safe_name}"}
 
 
 class UrlRequest(BaseModel):
     url: str
 
+
 @app.post("/upload_url")
 def upload_url(req: UrlRequest):
-    docs = load_url(req.url)
+    try:
+        n_chunks = process_url(req.url)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to ingest URL: {e}")
+    return {"message": f"Stored {n_chunks} chunks from URL"}
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunks = splitter.split_documents(docs)
 
-    embeddings = OpenAIEmbeddings()
-    db = Chroma.from_documents(chunks, embedding=embeddings, persist_directory=CHROMA_PATH)
-    db.persist()
-    return {"message": f"Stored {len(chunks)} chunks from URL"}
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
