@@ -1,0 +1,25 @@
+About DocuChat (demo document)
+
+DocuChat is a Retrieval-Augmented Generation (RAG) application. It lets you
+upload documents (PDF, DOCX, TXT) or ingest a web page by URL, then ask
+questions about their content and receive answers grounded strictly in
+what was uploaded.
+
+How it works:
+1. Ingestion: documents are parsed, split into overlapping chunks of about
+   500 characters with a 50-character overlap, and embedded using OpenAI's
+   embedding models.
+2. Storage: chunk embeddings are stored in a local ChromaDB vector store.
+3. Retrieval: when you ask a question, the most similar chunks are found
+   via vector similarity search.
+4. Grounded generation: the retrieved chunks are passed to the language
+   model along with your question and an instruction to answer only from
+   that context, and to say "I don't know based on the provided documents"
+   if the answer isn't present. This is meant to reduce hallucination
+   compared to asking the model from its general knowledge.
+5. Citations: every answer lists the source file (and page number, for
+   PDFs) and a short snippet of the retrieved text it was based on.
+
+This document is preloaded so you can try asking a question immediately
+without uploading anything yourself. Try asking: "What chunk size and
+overlap does DocuChat use?" or "How does DocuChat avoid hallucination?"

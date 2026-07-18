@@ -1,0 +1,33 @@
+Fictional Company Remote Work Policy (demo document)
+
+Note: "Aster Robotics" is a fictional company invented for this demo. Any
+resemblance to a real company is coincidental. This document exists so you
+can test DocuChat's grounded Q&A on a realistic-looking policy document.
+
+1. Eligibility
+   Full-time employees who have completed a 90-day probation period are
+   eligible to work remotely up to 3 days per week, subject to manager
+   approval.
+
+2. Core hours
+   Remote employees must be reachable between 11:00 and 16:00 in their
+   local time zone, regardless of which days they work remotely.
+
+3. Equipment
+   Aster Robotics provides a laptop and a one-time home-office stipend of
+   $400. Employees are responsible for their own internet connection.
+
+4. Expense reimbursement
+   Reasonable co-working space costs (up to $150/month) are reimbursable
+   with a submitted receipt. Personal equipment upgrades are not covered.
+
+5. Security
+   Remote employees must use the company VPN when accessing internal
+   systems and must not work from public, unsecured Wi-Fi networks without
+   the VPN enabled.
+
+6. Review
+   This policy is reviewed annually by HR every January.
+
+Try asking: "How many days per week can employees work remotely at Aster
+Robotics?" or "What is the home-office stipend?"

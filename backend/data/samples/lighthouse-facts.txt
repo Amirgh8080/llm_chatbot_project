@@ -1,0 +1,25 @@
+Lighthouse Facts (demo document)
+
+A lighthouse is a tower, building, or structure designed to emit light from
+a system of lamps and lenses, used as a navigational aid for maritime
+pilots at sea or on inland waterways.
+
+Early lighthouses used open fires or wood-burning beacons. The Pharos of
+Alexandria, built in the 3rd century BC on the island of Pharos near
+Alexandria, Egypt, is one of the earliest known lighthouses and was
+counted among the Seven Wonders of the Ancient World.
+
+Modern lighthouses typically use rotating lenses (often Fresnel lenses,
+invented in 1822) to concentrate light into a powerful beam visible for
+many kilometers. Each lighthouse has a distinct light pattern, called its
+"characteristic," so sailors can identify which lighthouse they are
+looking at purely from its flashing sequence.
+
+Since the late 20th century, most lighthouses have been automated, and
+GPS has reduced (though not eliminated) their practical navigational
+importance. Many retired lighthouses are preserved as historic landmarks.
+
+This document intentionally does not mention any specific country's
+lighthouse regulations. Try asking DocuChat about lighthouse regulations
+in a specific country to see the grounded-refusal behavior: it should say
+it doesn't know, since that information isn't in this document.

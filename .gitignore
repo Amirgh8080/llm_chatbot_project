@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 chroma_db/
 uploads/
+backend/data/db/
+backend/data/docs/
+.venv/
